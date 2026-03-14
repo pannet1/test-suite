@@ -9,6 +9,7 @@ from wifitest import WiFiTest
 from audiotest import AudioTest
 from othertests import EthTest, BTTest, USBTest, GPUTest, CamTest
 from specengine import SpecEngine
+from thermalengine import ThermalEngine
 
 
 class TestSuite:
@@ -29,81 +30,93 @@ class TestSuite:
         self.stdscr.attroff(curses.color_pair(color_pair))
 
     def execute(self):
-        # 1. Fetch Identity
-        idnt = SpecEngine(self.stdscr).get_laptop_identity()
+        y_pos = 1  # Starting row
 
-        # 2. Draw Unified Header
+        # 1. Fetch & Draw Identity Header
+        idnt = SpecEngine(self.stdscr).get_laptop_identity()
+        spec_line = f"{idnt['vendor']} {idnt['model']} | TAG: {idnt['tag']}"
+
         self.stdscr.addstr(
-            1,
+            y_pos,
             2,
             "┌───────────────────────────────────────────────┐",
             curses.color_pair(1),
         )
-        # This line now fits the trade-spec exchange format
-        spec_line = f"{idnt['vendor']} {idnt['model']} | TAG: {idnt['tag']}"
-        self.stdscr.addstr(2, 2, f"│{spec_line:^47}│", curses.color_pair(1))
+        self.stdscr.addstr(y_pos + 1, 2, f"│{spec_line:^47}│", curses.color_pair(1))
         self.stdscr.addstr(
-            3,
+            y_pos + 2,
             2,
             "└───────────────────────────────────────────────┘",
             curses.color_pair(1),
         )
+        y_pos += 3  # Move down past header
 
-        # ... run Engines ...
-
+        # 2. Draw Version/Engine Header
         self.stdscr.addstr(
-            1,
+            y_pos,
             2,
             "┌───────────────────────────────────────────────┐",
             curses.color_pair(1),
         )
         self.stdscr.addstr(
-            2,
+            y_pos + 1,
             2,
             "│   CHIP-LEVEL CLASS-BASED AUDIT ENGINE v8.2    │",
             curses.color_pair(1),
         )
         self.stdscr.addstr(
-            3,
+            y_pos + 2,
             2,
             "└───────────────────────────────────────────────┘",
             curses.color_pair(1),
         )
+        y_pos += 4  # Spacing before primary tests
 
-        # 1-3. Primary Stress Engines
-        CPUEngine(self.stdscr).run(5)
-        RAMEngine(self.stdscr).run(11)
-        DiskEngine(self.stdscr).run(17)
+        # 3. Primary Stress Engines (Mutating y_pos)
+        CPUEngine(self.stdscr).run(y_pos)
+        y_pos += 6
 
-        # 4. WIFI & 5. AUDIO
-        self.stdscr.addstr(23, 2, "4. WIFI:", curses.A_BOLD)
+        ThermalEngine(self.stdscr).run(y_pos)
+        y_pos += 6
+
+        RAMEngine(self.stdscr).run(y_pos)
+        y_pos += 6
+
+        DiskEngine(self.stdscr).run(y_pos)
+        y_pos += 7
+
+        # 4. WIFI & 5. AUDIO (Side-by-Side row)
+        self.stdscr.addstr(y_pos, 2, "4. WIFI:", curses.A_BOLD)
+        self.stdscr.addstr(y_pos, 18, "5. AUDIO:", curses.A_BOLD)
+
         wifi = WiFiTest(self.stdscr).check()
         self.draw_box(
-            24, 4, "WLAN0", str(wifi)[:11] if wifi else "OFF", 3 if wifi else 4
+            y_pos + 1, 4, "WLAN0", str(wifi)[:11] if wifi else "OFF", 3 if wifi else 4
         )
 
-        self.stdscr.addstr(23, 18, "5. AUDIO:", curses.A_BOLD)
         audio = AudioTest(self.stdscr).check()
         if isinstance(audio, dict):
-            self.draw_box(24, 18, "ALSA", "PLAYING", 2)
+            self.draw_box(y_pos + 1, 18, "ALSA", "PLAYING", 2)
             self.stdscr.refresh()
             os.system(audio["cmd"])
             time.sleep(1)
-            self.draw_box(24, 18, "CODEC", audio["status"][:9], 3)
+            self.draw_box(y_pos + 1, 18, "CODEC", audio["status"][:9], 3)
 
-        # 6. BATTERY (The New Deep Section)
-        self.stdscr.addstr(23, 34, "6. BATTERY:", curses.A_BOLD)
+        # 6. BATTERY (Shared row with Wifi/Audio)
+        self.stdscr.addstr(y_pos, 34, "6. BATTERY:", curses.A_BOLD)
         bat = BatteryTest(self.stdscr).check()
         if isinstance(bat, dict):
-            # Show health percentage in the box, and cycles in a log line below
             color = 3 if int(bat["health"].replace("%", "")) > 70 else 2
-            self.draw_box(24, 34, "HEALTH", bat["health"], color)
-            self.stdscr.addstr(28, 34, f"CYCLES: {bat['cycles']}", curses.A_BOLD)
+            self.draw_box(y_pos + 1, 34, "HEALTH", bat["health"], color)
+            self.stdscr.addstr(y_pos + 5, 34, f"CYCLES: {bat['cycles']}", curses.A_BOLD)
         else:
-            self.draw_box(24, 34, "BAT0", "NOT FOUND", 4)
+            self.draw_box(y_pos + 1, 34, "BAT0", "NOT FOUND", 4)
+
+        y_pos += 7  # Move past the row of boxes
 
         # 7-11. REMAINING BUS TESTS
-        self.stdscr.addstr(30, 2, "7-11. REMAINING PERIPHERALS:", curses.A_BOLD)
+        self.stdscr.addstr(y_pos, 2, "7-11. REMAINING PERIPHERALS:", curses.A_BOLD)
+        y_pos += 1
         others = [
             ("USB", USBTest(self.stdscr).check()),
             ("BT", BTTest(self.stdscr).check()),
@@ -114,10 +127,11 @@ class TestSuite:
         for i, (name, res) in enumerate(others):
             color = curses.color_pair(3 if res else 4)
             self.stdscr.addstr(
-                31, 4 + (i * 12), f"[{name}:{str(res)[:6] if res else '??'}]", color
+                y_pos, 4 + (i * 12), f"[{name}:{str(res)[:6] if res else '??'}]", color
             )
 
-        self.stdscr.addstr(33, 2, "AUDIT COMPLETE. Press any key to exit.")
+        y_pos += 2
+        self.stdscr.addstr(y_pos, 2, "AUDIT COMPLETE. Press any key to exit.")
         self.stdscr.getch()
 
 
