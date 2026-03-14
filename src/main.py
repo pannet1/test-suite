@@ -29,27 +29,27 @@ class TestSuite:
         self.stdscr.attroff(curses.color_pair(color_pair))
 
     def execute(self):
-        # Fetching identity before drawing
-        identity = SpecEngine(self.stdscr).get_laptop_identity()
+        # 1. Fetch Identity
+        idnt = SpecEngine(self.stdscr).get_laptop_identity()
 
-        # --- UI Header ---
+        # 2. Draw Unified Header
         self.stdscr.addstr(
             1,
             2,
             "┌───────────────────────────────────────────────┐",
             curses.color_pair(1),
         )
-        # Display: DELL | Latitude 5340 | TAG: ABC1234
-        header_text = (
-            f"│ {identity['vendor']} | {identity['model']} | {identity['tag']} │"
-        )
-        self.stdscr.addstr(2, 2, f"{header_text:^49}", curses.color_pair(1))
+        # This line now fits the trade-spec exchange format
+        spec_line = f"{idnt['vendor']} {idnt['model']} | TAG: {idnt['tag']}"
+        self.stdscr.addstr(2, 2, f"│{spec_line:^47}│", curses.color_pair(1))
         self.stdscr.addstr(
             3,
             2,
             "└───────────────────────────────────────────────┘",
             curses.color_pair(1),
         )
+
+        # ... run Engines ...
 
         self.stdscr.addstr(
             1,

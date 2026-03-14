@@ -1,27 +1,26 @@
-import re
+import os
 from basetest import BaseTest
 
 
 class SpecEngine(BaseTest):
     def get_laptop_identity(self):
-        # 1. Pull Manufacturer (e.g., Dell Inc.)
-        vendor_raw = self.safe_shell("dmidecode -s system-manufacturer")
-        vendor = vendor_raw.strip() if vendor_raw else "Unknown Vendor"
+        # Fallback to /sys/class/dmi/id/ which doesn't need root
+        def read_sys(file):
+            path = f"/sys/class/dmi/id/{file}"
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        return f.read().strip()
+                except:
+                    return None
+            return None
 
-        # Clean up common names
-        if "Dell" in vendor:
-            vendor = "DELL"
-        elif "HP" in vendor:
-            vendor = "HP"
-        elif "Lenovo" in vendor:
-            vendor = "LENOVO"
+        vendor = read_sys("sys_vendor") or "Generic"
+        model = read_sys("product_name") or "System"
+        tag = read_sys("product_serial") or "No Tag"
 
-        # 2. Pull Model Name (e.g., Latitude 5340)
-        model_raw = self.safe_shell("dmidecode -s system-product-name")
-        model = model_raw.strip() if model_raw else "System Model"
-
-        # 3. Pull Serial/Service Tag (Vital for finding schematics/drivers)
-        tag_raw = self.safe_shell("dmidecode -s system-serial-number")
-        tag = tag_raw.strip() if tag_raw else "No Tag"
-
-        return {"vendor": vendor, "model": model, "tag": tag}
+        return {
+            "vendor": vendor.split()[0].upper(),  # e.g., DELL
+            "model": model[:15],
+            "tag": tag,
+        }
