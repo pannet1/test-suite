@@ -1,0 +1,5 @@
+CPU: 2 Cores - PASS
+Memory: 15.53GB - PASS
+Battery: 100.0% - PASS
+Storage Error: [Errno 2] No such file or directory: 'smartctl'
+Storage Audit: FAIL
