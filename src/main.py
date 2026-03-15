@@ -119,10 +119,10 @@ class TestSuite:
         y_pos += 1
         others = [
             ("USB", USBTest(self.stdscr).check()),
-            ("BT", BTTest(self.stdscr).check()),
+            #("BT", BTTest(self.stdscr).check()),
             ("GPU", GPUTest(self.stdscr).check()),
             ("CAM", CamTest(self.stdscr).check()),
-            ("ETH", EthTest(self.stdscr).check()),
+            #("ETH", EthTest(self.stdscr).check()),
         ]
         for i, (name, res) in enumerate(others):
             color = curses.color_pair(3 if res else 4)
