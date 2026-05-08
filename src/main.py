@@ -1,6 +1,7 @@
 import curses
 import os
 import time
+import argparse
 from batterytest import BatteryTest
 from cpuengine import CPUEngine
 from diskengine import DiskEngine
@@ -13,8 +14,9 @@ from thermalengine import ThermalEngine
 
 
 class TestSuite:
-    def __init__(self, stdscr):
+    def __init__(self, stdscr, simulate=False):
         self.stdscr = stdscr
+        self.simulate = simulate
         curses.start_color()
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
@@ -30,6 +32,17 @@ class TestSuite:
         self.stdscr.attroff(curses.color_pair(color_pair))
 
     def execute(self):
+        if self.simulate:
+            os.environ["VOLTRON_SIMULATE"] = "1"
+
+        # Check terminal size
+        rows, cols = self.stdscr.getmaxyx()
+        if rows < 42 or cols < 50:
+            self.stdscr.addstr(0, 0, "ERROR: Terminal too small (need 42x50 min)")
+            self.stdscr.refresh()
+            self.stdscr.getch()
+            return
+
         y_pos = 1  # Starting row
 
         # 1. Fetch & Draw Identity Header
@@ -106,13 +119,18 @@ class TestSuite:
         self.stdscr.addstr(y_pos, 34, "6. BATTERY:", curses.A_BOLD)
         bat = BatteryTest(self.stdscr).check()
         if isinstance(bat, dict):
-            color = 3 if int(bat["health"].replace("%", "")) > 70 else 2
+            health_val = int(bat["health"].replace("%", ""))
+            color = 3 if health_val > 70 else 2
             self.draw_box(y_pos + 1, 34, "HEALTH", bat["health"], color)
-            self.stdscr.addstr(y_pos + 5, 34, f"CYCLES: {bat['cycles']}", curses.A_BOLD)
+            self.stdscr.addstr(y_pos + 5, 46, f"CYCLES: {bat['cycles']}", curses.A_BOLD)
+
+            if bat.get("voltron"):
+                self.stdscr.addstr(y_pos + 6, 46, f"TEMP: {bat['temp']}", curses.color_pair(color))
+                self.stdscr.addstr(y_pos + 7, 46, f"STATUS: {bat['status'][:10]}", curses.color_pair(1))
         else:
             self.draw_box(y_pos + 1, 34, "BAT0", "NOT FOUND", 4)
 
-        y_pos += 7  # Move past the row of boxes
+        y_pos += 9  # Move past the row of boxes and extra Voltron info
 
         # 7-11. REMAINING BUS TESTS
         self.stdscr.addstr(y_pos, 2, "7-11. REMAINING PERIPHERALS:", curses.A_BOLD)
@@ -131,9 +149,16 @@ class TestSuite:
             )
 
         y_pos += 2
+        # Cap y_pos to stay within terminal bounds
+        rows, cols = self.stdscr.getmaxyx()
+        y_pos = min(y_pos, rows - 3)
         self.stdscr.addstr(y_pos, 2, "AUDIT COMPLETE. Press any key to exit.")
         self.stdscr.getch()
 
 
 if __name__ == "__main__":
-    curses.wrapper(lambda stdscr: TestSuite(stdscr).execute())
+    parser = argparse.ArgumentParser(description="Chip-Level Class-Based Audit Engine")
+    parser.add_argument("--simulate", action="store_true", help="Run in simulation mode")
+    args = parser.parse_args()
+
+    curses.wrapper(lambda stdscr: TestSuite(stdscr, simulate=args.simulate).execute())

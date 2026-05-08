@@ -1,0 +1,16 @@
+{
+    "timestamp": "2026-05-09T04:47:11.301462",
+    "bus_number": 0,
+    "simulation_mode": true,
+    "metrics": {
+        "voltage_mv": 12600,
+        "current_ma": -150,
+        "temperature_c": 25.5,
+        "cycle_count": 42,
+        "design_capacity_mah": 4400
+    },
+    "status": {
+        "pf_bit_set": true,
+        "seal_status": "Unsealed (Simulated)"
+    }
+}

@@ -1,0 +1,13 @@
+[project]
+name = "project-voltron"
+version = "0.1.0"
+description = "Smart Battery Diagnostic Service"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.33.1",
+    "smbus2>=0.6.1",
+]
+
+[project.scripts]
+diagnostics = "diagnostics:main"
