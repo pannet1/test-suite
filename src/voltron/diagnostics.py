@@ -4,16 +4,20 @@ import os
 import argparse
 import logging
 from datetime import datetime
+from pathlib import Path
 from .core.smbus_engine import BatteryDevice, MockBatteryDevice
 from .utils.scanner import find_battery_bus, format_report
 
-# Setup logging
-os.makedirs("data", exist_ok=True)
+# Setup: ensure data/ folder exists at project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("data/log.txt"),
+        logging.FileHandler(DATA_DIR / "log.txt"),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -97,8 +101,10 @@ def main():
                 surgeon.attempt_unseal()
             logger.info("="*40 + "\n")
         
-        # 5. Save to reports/
-        filename = f"reports/diag_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        # 5. Save to data/reports/
+        reports_dir = DATA_DIR / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        filename = reports_dir / f"diag_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(filename, 'w') as f:
             f.write(report_json)
         logger.info(f"\nReport saved to {filename}")
