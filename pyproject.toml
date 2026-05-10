@@ -1,15 +1,12 @@
 [project]
 name = "test-suite"
 version = "0.1.0"
-description = "Hardware Test Suite with Voltron Battery Diagnostics"
+description = "Hardware Test Suite"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "psutil>=7.2.2",
-    "requests>=2.33.1",
-    "smbus2>=0.6.1",
 ]
 
 [project.scripts]
 test-suite = "main:main"
-voltron = "voltron.diagnostics:main"
