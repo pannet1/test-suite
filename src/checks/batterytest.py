@@ -2,8 +2,8 @@ import os
 from basetest import BaseTest
 
 try:
-    from voltron.core.smbus_engine import BatteryDevice, MockBatteryDevice
-    from voltron.utils.scanner import find_battery_bus
+    from core.smbus_engine import BatteryDevice, MockBatteryDevice
+    from utils.scanner import find_battery_bus
     HAS_VOLTRON = True
 except ImportError:
     HAS_VOLTRON = False

@@ -2,15 +2,15 @@ import curses
 import os
 import time
 import argparse
-from batterytest import BatteryTest
-from cpuengine import CPUEngine
-from diskengine import DiskEngine
-from ramengine import RAMEngine
-from wifitest import WiFiTest
-from audiotest import AudioTest
-from othertests import EthTest, BTTest, USBTest, GPUTest, CamTest
+from checks.batterytest import BatteryTest
+from checks.othertests import EthTest, BTTest, USBTest, GPUTest, CamTest
+from checks.audiotest import AudioTest
+from checks.wifitest import WiFiTest
+from engines.cpuengine import CPUEngine
+from engines.diskengine import DiskEngine
+from engines.ramengine import RAMEngine
+from engines.thermalengine import ThermalEngine
 from specengine import SpecEngine
-from thermalengine import ThermalEngine
 
 
 class TestSuite:
